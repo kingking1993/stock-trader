@@ -23,8 +23,11 @@ class Settings(BaseSettings):
     toss_client_secret: str = ""
     toss_allow_orders: bool = False
 
+    # 한국투자증권 실계좌 주문 허용 (기본 꺼짐 — 실제 돈)
+    kis_allow_real_orders: bool = False
+
     agent_model: str = "claude-sonnet-5"
-    app_api_key: str = "dev-key"
+    app_api_key: str = "dev-key"  # 앱 잠금 비밀번호 겸용 (배포 시 강한 값으로 교체)
     max_order_value: float = 5000.0  # 미국 주문 1회 상한 (USD)
     max_order_value_krw: float = 5_000_000.0  # 국내 주문 1회 상한 (KRW)
 

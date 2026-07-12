@@ -141,7 +141,11 @@ def status() -> list[dict]:
                 "broker": broker,
                 "label": BROKER_LABELS[broker],
                 "configured": configured,
-                "allow_orders": settings.toss_allow_orders if broker == "toss" else None,
+                "allow_orders": (
+                    settings.toss_allow_orders if broker == "toss"
+                    else settings.kis_allow_real_orders if broker == "kis"
+                    else None
+                ),
                 "fields": [
                     {
                         "env": f["env"],

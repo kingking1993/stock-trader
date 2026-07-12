@@ -16,6 +16,7 @@ import {
   deleteManualAccount,
   getBrokers,
   setBroker,
+  setKisAllowOrders,
   setTossAllowOrders,
   testBroker,
   upsertManualAccount,
@@ -134,7 +135,7 @@ function BrokerCard({ broker, onChanged }: { broker: BrokerStatus; onChanged: ()
               {f.label}: {f.masked || '-'}
             </Text>
           ))}
-          {broker.broker === 'toss' && (
+          {broker.allow_orders != null && (
             <Pressable
               style={[styles.allowRow, broker.allow_orders && { borderColor: C.critical }]}
               onPress={async () => {
@@ -146,7 +147,8 @@ function BrokerCard({ broker, onChanged }: { broker: BrokerStatus; onChanged: ()
                       : true;
                   if (!ok) return;
                 }
-                await setTossAllowOrders(settings, next);
+                if (broker.broker === 'toss') await setTossAllowOrders(settings, next);
+                else if (broker.broker === 'kis') await setKisAllowOrders(settings, next);
                 onChanged();
               }}>
               <Text style={{ color: broker.allow_orders ? C.critical : C.muted, fontSize: 12, fontWeight: '700' }}>

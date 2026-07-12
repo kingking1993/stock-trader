@@ -80,6 +80,16 @@ def available_brokers(symbol: str) -> list[dict]:
     if kr:
         if kis_service.kis_vts_configured():
             out.append({"broker": "kis_vts", "label": "한국투자 모의", "live": False, "note": "모의투자 (가상자금)"})
+        if kis_service.kis_configured() and settings.kis_account:
+            out.append(
+                {
+                    "broker": "kis_real",
+                    "label": "한투 실전 (실제 돈)",
+                    "live": True,
+                    "note": "⚠ 실제 돈이 사용됩니다" if settings.kis_allow_real_orders else "실전 주문 꺼짐 (연동 관리에서 켜기)",
+                    "enabled": settings.kis_allow_real_orders,
+                }
+            )
     else:
         out.append({"broker": "alpaca", "label": "Alpaca 모의", "live": not settings.alpaca_paper, "note": "페이퍼 (가상자금)"})
         if kis_service.kis_vts_configured():
@@ -130,6 +140,8 @@ def propose(
         raise OrderError(f"{symbol}에 사용할 수 없는 계좌입니다: {broker} (가능: {sorted(valid)})")
     if broker == "toss" and not settings.toss_allow_orders:
         raise OrderError("토스증권 실전 주문이 꺼져 있습니다 — 연동 관리에서 '실전 주문 허용'을 켜세요")
+    if broker == "kis_real" and not settings.kis_allow_real_orders:
+        raise OrderError("한투 실계좌 주문이 꺼져 있습니다 — 연동 관리에서 '실전 주문 허용'을 켜세요")
     if broker == "kis_vts" and kr:
         from app.services import kis_service
 
@@ -194,6 +206,19 @@ def confirm(order_id: str) -> dict:
 
         result = toss_service.submit_order(
             symbol=order.symbol,
+            side=order.side,
+            qty=order.qty,
+            order_type=order.order_type,
+            limit_price=order.limit_price,
+        )
+    elif order.broker == "kis_real":
+        from app.config import settings
+        from app.services import kis_service
+
+        if not settings.kis_allow_real_orders:
+            raise OrderError("한투 실계좌 주문이 꺼져 있습니다")
+        result = kis_service.submit_real_order(
+            code=order.symbol,
             side=order.side,
             qty=order.qty,
             order_type=order.order_type,

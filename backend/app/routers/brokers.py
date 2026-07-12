@@ -42,6 +42,13 @@ async def toss_allow_orders(body: AllowOrdersIn):
     return {"allow": body.allow}
 
 
+@router.post("/kis/allow-orders")
+async def kis_allow_orders(body: AllowOrdersIn):
+    """한투 실계좌 주문 허용 토글 — 실제 돈이 나가는 스위치."""
+    broker_admin.set_env_flag("KIS_ALLOW_REAL_ORDERS", "true" if body.allow else "false")
+    return {"allow": body.allow}
+
+
 @router.post("/{broker}/test")
 async def test_broker(broker: str):
     return await asyncio.to_thread(broker_admin.test_connection, broker)

@@ -146,6 +146,17 @@ export type ScreenParams = {
 
 // ---------- REST ----------
 export const getHealth = (s: Settings) => apiFetch<{ status: string; paper_trading: boolean }>(s, '/health');
+export const verifyKey = (s: Settings) => apiFetch<{ ok: boolean }>(s, '/api/verify');
+export const changePassword = (s: Settings, current: string, newPw: string) =>
+  apiFetch<{ ok: boolean; note: string }>(s, '/api/change-password', {
+    method: 'POST',
+    body: JSON.stringify({ current, new: newPw }),
+  });
+export const setKisAllowOrders = (s: Settings, allow: boolean) =>
+  apiFetch<{ allow: boolean }>(s, '/api/brokers/kis/allow-orders', {
+    method: 'POST',
+    body: JSON.stringify({ allow }),
+  });
 export const getChatStatus = (s: Settings) => apiFetch<{ enabled: boolean }>(s, '/api/chat/status');
 
 export const getRecommend = (s: Settings, market: Market, top = 10, analyze = false) =>

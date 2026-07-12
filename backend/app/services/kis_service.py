@@ -453,6 +453,41 @@ def submit_order(code: str, side: str, qty: float, order_type: str = "market", l
     }
 
 
+def submit_real_order(code: str, side: str, qty: float, order_type: str = "market", limit_price: float | None = None) -> dict:
+    """⚠ 한투 실계좌 국내 주문 — 실제 돈. settings.kis_allow_real_orders 확인은 호출측(order_store)에서."""
+    if not settings.kis_account:
+        raise KISError("한투 실계좌번호(KIS_ACCOUNT)가 설정되지 않았습니다")
+    cano, prdt = _split_account(settings.kis_account)
+    is_buy = side.lower() == "buy"
+    body = {
+        "CANO": cano,
+        "ACNT_PRDT_CD": prdt,
+        "PDNO": code,
+        "ORD_DVSN": "01" if order_type == "market" else "00",  # 01 시장가, 00 지정가
+        "ORD_QTY": str(int(qty)),
+        "ORD_UNPR": str(int(limit_price)) if (order_type == "limit" and limit_price) else "0",
+        "EXCG_ID_DVSN_CD": "KRX",
+    }
+    data = real_client().request(
+        "POST",
+        "/uapi/domestic-stock/v1/trading/order-cash",
+        tr_id="TTTC0012U" if is_buy else "TTTC0011U",  # 실전 매수/매도
+        body=body,
+    )
+    out = data.get("output", {})
+    return {
+        "id": out.get("ODNO", ""),
+        "symbol": code,
+        "side": side,
+        "qty": qty,
+        "type": order_type,
+        "status": "accepted",
+        "broker": "kis_real",
+        "message": data.get("msg1", "").strip(),
+        "submitted_at": datetime.now().isoformat(),
+    }
+
+
 def get_vts_balance() -> dict:
     """모의투자 계좌 잔고 (주문 연습 계좌 현황)."""
     if not kis_vts_configured():

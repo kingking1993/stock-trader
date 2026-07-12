@@ -9,7 +9,7 @@ export type Settings = {
 const DEFAULTS: Settings = {
   // 클라우드(Render) 백엔드 — 노트북 없이 어디서든 접속. 로컬 개발 시 설정에서 변경.
   baseUrl: 'https://stock-trader-fav6.onrender.com',
-  apiKey: 'dev-key',
+  apiKey: '', // 비밀번호 잠금: 첫 실행 시 사용자가 입력 → 저장
 };
 
 const KEY = 'stock-trader-settings';
@@ -17,18 +17,23 @@ const KEY = 'stock-trader-settings';
 type Ctx = {
   settings: Settings;
   loaded: boolean;
+  unlocked: boolean; // 비밀번호 확인 완료 여부
   save: (s: Settings) => Promise<void>;
+  setUnlocked: (v: boolean) => void;
 };
 
 const SettingsContext = createContext<Ctx>({
   settings: DEFAULTS,
   loaded: false,
+  unlocked: false,
   save: async () => {},
+  setUnlocked: () => {},
 });
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<Settings>(DEFAULTS);
   const [loaded, setLoaded] = useState(false);
+  const [unlocked, setUnlocked] = useState(false);
 
   useEffect(() => {
     AsyncStorage.getItem(KEY)
@@ -44,7 +49,7 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <SettingsContext.Provider value={{ settings, loaded, save }}>
+    <SettingsContext.Provider value={{ settings, loaded, unlocked, save, setUnlocked }}>
       {children}
     </SettingsContext.Provider>
   );

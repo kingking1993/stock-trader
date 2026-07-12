@@ -1,9 +1,11 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { getHealth } from '../lib/api';
+import { Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { changePassword, getHealth } from '../lib/api';
 import { useSettings } from '../lib/settings';
 import { C } from '../lib/theme';
+
+const notify = (t: string, m: string) => (Platform.OS === 'web' ? window.alert(`${t}\n${m}`) : Alert.alert(t, m));
 
 export default function SettingsScreen() {
   const { settings, save } = useSettings();
@@ -11,6 +13,25 @@ export default function SettingsScreen() {
   const [baseUrl, setBaseUrl] = useState(settings.baseUrl);
   const [apiKey, setApiKey] = useState(settings.apiKey);
   const [testing, setTesting] = useState(false);
+  const [curPw, setCurPw] = useState('');
+  const [newPw, setNewPw] = useState('');
+  const [pwBusy, setPwBusy] = useState(false);
+
+  const doChangePassword = async () => {
+    if (!curPw || !newPw) return;
+    setPwBusy(true);
+    try {
+      await changePassword(settings, curPw.trim(), newPw.trim());
+      await save({ ...settings, apiKey: newPw.trim() });
+      setCurPw('');
+      setNewPw('');
+      notify('완료', '비밀번호가 변경되었습니다. 다른 기기는 새 비밀번호로 다시 로그인해야 합니다.');
+    } catch (e: any) {
+      notify('실패', String(e?.message ?? e));
+    } finally {
+      setPwBusy(false);
+    }
+  };
 
   const test = async () => {
     setTesting(true);
@@ -46,17 +67,6 @@ export default function SettingsScreen() {
       />
       <Text style={styles.hint}>PC에서 ipconfig로 확인한 LAN IP를 사용하세요 (같은 Wi-Fi 필요)</Text>
 
-      <Text style={styles.label}>API 키 (백엔드 .env의 APP_API_KEY)</Text>
-      <TextInput
-        style={styles.input}
-        value={apiKey}
-        onChangeText={setApiKey}
-        placeholder="dev-key"
-        placeholderTextColor={C.muted}
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
-
       <Pressable style={[styles.btn, styles.btnGhost]} onPress={test} disabled={testing}>
         <Text style={[styles.btnText, { color: C.textSecondary }]}>
           {testing ? '확인 중…' : '연결 테스트'}
@@ -68,6 +78,31 @@ export default function SettingsScreen() {
 
       <Pressable style={[styles.btn, styles.btnGhost]} onPress={() => router.push('/brokers')}>
         <Text style={[styles.btnText, { color: C.textSecondary }]}>계좌 연동 관리 (증권사 API·수동 계좌) →</Text>
+      </Pressable>
+
+      {/* 비밀번호 변경 (두 사람 공용 잠금) */}
+      <Text style={[styles.label, { marginTop: 28 }]}>비밀번호 변경</Text>
+      <Text style={styles.hint}>변경 시 다른 기기는 새 비밀번호로 다시 로그인해야 합니다.</Text>
+      <TextInput
+        style={styles.input}
+        value={curPw}
+        onChangeText={setCurPw}
+        placeholder="현재 비밀번호"
+        placeholderTextColor={C.muted}
+        secureTextEntry
+        autoCapitalize="none"
+      />
+      <TextInput
+        style={styles.input}
+        value={newPw}
+        onChangeText={setNewPw}
+        placeholder="새 비밀번호 (4자 이상)"
+        placeholderTextColor={C.muted}
+        secureTextEntry
+        autoCapitalize="none"
+      />
+      <Pressable style={[styles.btn, styles.btnGhost]} onPress={doChangePassword} disabled={pwBusy}>
+        <Text style={[styles.btnText, { color: C.textSecondary }]}>{pwBusy ? '변경 중…' : '비밀번호 변경'}</Text>
       </Pressable>
     </View>
   );

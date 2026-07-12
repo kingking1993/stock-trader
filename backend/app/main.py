@@ -13,7 +13,7 @@ if settings.anthropic_api_key and not os.environ.get("ANTHROPIC_API_KEY"):
     os.environ["ANTHROPIC_API_KEY"] = settings.anthropic_api_key
 
 from app.agent.agent import session_manager  # noqa: E402
-from app.routers import brokers, chat, market, recommend, trading  # noqa: E402
+from app.routers import auth, brokers, chat, market, recommend, trading  # noqa: E402
 
 
 @asynccontextmanager
@@ -31,6 +31,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(auth.router)
 app.include_router(brokers.router)
 app.include_router(market.router)
 app.include_router(recommend.router)
