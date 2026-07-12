@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     kis_allow_real_orders: bool = False
 
     agent_model: str = "claude-sonnet-5"
-    app_api_key: str = "dev-key"  # 앱 잠금 비밀번호 겸용 (배포 시 강한 값으로 교체)
+    app_api_key: str = "MJK261025"  # 앱 잠금 비밀번호 겸용 (설정에서 변경 가능)
     max_order_value: float = 5000.0  # 미국 주문 1회 상한 (USD)
     max_order_value_krw: float = 5_000_000.0  # 국내 주문 1회 상한 (KRW)
 
