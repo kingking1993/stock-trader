@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { InlineChart } from '../../components/InlineChart';
 import { RecommendCard } from '../../components/RecommendCard';
-import { defaultTableWidth, RowHeader, StockRow } from '../../components/StockRow';
+import { daytradeTableWidth, defaultTableWidth, RowHeader, StockRow } from '../../components/StockRow';
 import { getMovers, getRecommend, getScreen, type Candidate, type Market, type SortKey } from '../../lib/api';
 import { useSettings } from '../../lib/settings';
 import { C } from '../../lib/theme';
@@ -223,7 +223,7 @@ export default function RecommendScreen() {
   // 행 탭 = 인라인 차트 펼침/접힘
   const toggleExpand = (symbol: string) => setExpanded((cur) => (cur === symbol ? null : symbol));
 
-  const inlineWidth = rowMode === 'default' ? defaultTableWidth(showRank) : undefined;
+  const inlineWidth = (rowMode === 'daytrade' ? daytradeTableWidth : defaultTableWidth)(showRank);
   const rows = candidates.map((item) => (
     <React.Fragment key={item.symbol}>
       <StockRow item={item} mode={rowMode} showRank={showRank} onPress={() => toggleExpand(item.symbol)} />
@@ -249,16 +249,11 @@ export default function RecommendScreen() {
         candidates.map((item) => (
           <RecommendCard key={item.symbol} item={item} showRank={showRank} onPress={() => goChart(item.symbol)} />
         ))
-      ) : rowMode === 'daytrade' ? (
-        <View style={{ paddingHorizontal: 12, marginTop: 8 }}>
-          <RowHeader showRank={showRank} mode="daytrade" />
-          {rows}
-        </View>
       ) : (
-        // 일반 테이블: 컬럼이 많아 가로 스크롤 (세로 스크롤은 바깥에서)
+        // 테이블: 컬럼이 많아 가로 스크롤 (세로 스크롤은 바깥에서)
         <ScrollView horizontal showsHorizontalScrollIndicator style={{ marginTop: 8 }} contentContainerStyle={{ paddingHorizontal: 12 }}>
-          <View style={{ width: defaultTableWidth(showRank) }}>
-            <RowHeader showRank={showRank} mode="default" />
+          <View style={{ width: (rowMode === 'daytrade' ? daytradeTableWidth : defaultTableWidth)(showRank) }}>
+            <RowHeader showRank={showRank} mode={rowMode} />
             {rows}
           </View>
         </ScrollView>

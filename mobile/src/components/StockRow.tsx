@@ -12,6 +12,10 @@ export const COLS = { price: 74, change: 56, rsi: 38, gap: 52, vol: 44, min: 46,
 export const defaultTableWidth = (showRank?: boolean) =>
   2 + (showRank ? COLS.rank : 0) + COLS.name + COLS.price + COLS.change + COLS.rsi + COLS.gap * 4 + COLS.value + COLS.vol + 20;
 
+/** daytrade(단타) 모드 테이블 전체 폭 */
+export const daytradeTableWidth = (showRank?: boolean) =>
+  2 + (showRank ? COLS.rank : 0) + COLS.name + COLS.price + COLS.change + COLS.min * 3 + COLS.value + COLS.vol + 20;
+
 const curOf = (symbol: string): 'USD' | 'KRW' => (/^\d{6}$/.test(symbol) ? 'KRW' : 'USD');
 
 function num(v: number | null | undefined, suffix = '', signed = false): string {
@@ -51,7 +55,7 @@ export function StockRow({
       onPress={onPress}>
       <View style={[styles.scoreBar, { backgroundColor: scoreColor }]} />
       {showRank && <Text style={styles.rank}>{item.rank}</Text>}
-      <View style={mode === 'default' ? { width: COLS.name, paddingRight: 4 } : styles.nameFlex}>
+      <View style={{ width: COLS.name, paddingRight: 4 }}>
         <Text style={styles.name} numberOfLines={1}>
           {item.name ?? item.symbol}
         </Text>
@@ -103,7 +107,7 @@ export function RowHeader({ showRank, mode = 'default' }: { showRank?: boolean; 
     <View style={styles.header}>
       <View style={{ width: 2 }} />
       {showRank && <Text style={[styles.headText, { width: COLS.rank }]}>#</Text>}
-      <Text style={[styles.headText, mode === 'default' ? { width: COLS.name } : { flex: 1 }]}>종목</Text>
+      <Text style={[styles.headText, { width: COLS.name }]}>종목</Text>
       <Text style={[styles.headText, { width: COLS.price, textAlign: 'right' }]}>현재가</Text>
       <Text style={[styles.headText, { width: COLS.change, textAlign: 'right' }]}>등락</Text>
       {mode === 'daytrade' ? (
