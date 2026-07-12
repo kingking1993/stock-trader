@@ -21,12 +21,17 @@ async def recommend(market: str = "US", top: int = 5, analyze: bool = False):
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"스크리너 실패: {e}")
 
+    import os
+
     ai_summary = None
-    if analyze and candidates:
+    ai_available = bool(settings.anthropic_api_key or os.environ.get("ANTHROPIC_API_KEY"))
+    if analyze and candidates and ai_available:
         try:
             ai_summary = await _ai_commentary(candidates)
         except Exception as e:
             ai_summary = f"(AI 분석 실패: {e})"
+    elif analyze and not ai_available:
+        ai_summary = "(이 서버는 AI 분석이 비활성화되어 있습니다)"
 
     return {"market": market, "candidates": candidates, "ai_summary": ai_summary}
 

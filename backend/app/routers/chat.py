@@ -15,11 +15,20 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
+import os
+
+from fastapi import HTTPException
+
 from app.agent.agent import session_manager
+from app.config import settings
 from app.routers.deps import require_api_key
 from app.services import order_store
 
 router = APIRouter(prefix="/api/chat", tags=["chat"], dependencies=[Depends(require_api_key)])
+
+
+def _ai_enabled() -> bool:
+    return bool(settings.anthropic_api_key or os.environ.get("ANTHROPIC_API_KEY"))
 
 
 class ChatIn(BaseModel):
@@ -56,8 +65,18 @@ def _serialize(message) -> list[dict]:
     return events
 
 
+@router.get("/status")
+async def chat_status():
+    return {"enabled": _ai_enabled()}
+
+
 @router.post("")
 async def chat(body: ChatIn):
+    if not _ai_enabled():
+        raise HTTPException(
+            status_code=503,
+            detail="이 서버는 AI 채팅이 비활성화되어 있습니다 (Anthropic API 키 미설정). 시세·추천·매매 기능은 정상 동작합니다.",
+        )
     client, lock = await session_manager.get(body.session_id)
 
     async def gen():

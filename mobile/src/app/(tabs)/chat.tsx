@@ -1,3 +1,4 @@
+import { useQuery } from '@tanstack/react-query';
 import React, { useCallback, useRef, useState } from 'react';
 import {
   FlatList,
@@ -12,6 +13,7 @@ import {
 import { OrderConfirmCard } from '../../components/OrderConfirmCard';
 import {
   confirmOrder,
+  getChatStatus,
   rejectOrder,
   resetChatSession,
   streamChat,
@@ -46,6 +48,14 @@ export default function ChatScreen() {
   const listRef = useRef<FlatList>(null);
   const seenOrderIds = useRef<Set<string>>(new Set());
 
+  // 서버가 AI 채팅을 지원하는지 (클라우드 배포 시 키 없으면 비활성)
+  const statusQ = useQuery({
+    queryKey: ['chatStatus', settings.baseUrl],
+    queryFn: () => getChatStatus(settings),
+    retry: 0,
+  });
+  const aiDisabled = statusQ.data?.enabled === false;
+
   const push = useCallback((m: Msg) => {
     setMessages((prev) => [...prev, m]);
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 50);
@@ -53,7 +63,7 @@ export default function ChatScreen() {
 
   const send = () => {
     const text = input.trim();
-    if (!text || streaming) return;
+    if (!text || streaming || aiDisabled) return;
     setInput('');
     push({ kind: 'user', text });
     setStreaming(true);
@@ -131,14 +141,26 @@ export default function ChatScreen() {
         keyExtractor={(_, i) => String(i)}
         renderItem={renderItem}
         contentContainerStyle={{ padding: 12, paddingBottom: 20 }}
+        ListHeaderComponent={
+          aiDisabled ? (
+            <View style={styles.disabledBanner}>
+              <Text style={styles.disabledTitle}>ℹ️ 이 서버는 AI 채팅이 꺼져 있습니다</Text>
+              <Text style={styles.disabledText}>
+                클라우드 서버에는 Anthropic API 키가 없어 AI 분석 기능만 비활성화되어 있습니다. 시세·추천·스크리닝·차트·매매·포트폴리오는 모두 정상입니다.
+              </Text>
+            </View>
+          ) : null
+        }
         ListEmptyComponent={
-          <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>AI 주식 분석가</Text>
-            <Text style={styles.emptyText}>
-              예시:{'\n'}“오늘 매수할 만한 종목 추천해줘”{'\n'}“AAPL RSI랑 이평선 분석해줘”{'\n'}
-              “NVDA 1주 매수 제안해줘”
-            </Text>
-          </View>
+          aiDisabled ? null : (
+            <View style={styles.empty}>
+              <Text style={styles.emptyTitle}>AI 주식 분석가</Text>
+              <Text style={styles.emptyText}>
+                예시:{'\n'}“오늘 매수할 만한 종목 추천해줘”{'\n'}“AAPL RSI랑 이평선 분석해줘”{'\n'}
+                “NVDA 1주 매수 제안해줘”
+              </Text>
+            </View>
+          )
         }
       />
       <View style={styles.inputRow}>
@@ -149,16 +171,16 @@ export default function ChatScreen() {
           style={styles.input}
           value={input}
           onChangeText={setInput}
-          placeholder={streaming ? '응답 생성 중…' : '메시지 입력'}
+          placeholder={aiDisabled ? 'AI 채팅 비활성화됨' : streaming ? '응답 생성 중…' : '메시지 입력'}
           placeholderTextColor={C.muted}
-          editable={!streaming}
+          editable={!streaming && !aiDisabled}
           onSubmitEditing={send}
           returnKeyType="send"
         />
         <Pressable
-          style={[styles.sendBtn, streaming && { opacity: 0.4 }]}
+          style={[styles.sendBtn, (streaming || aiDisabled) && { opacity: 0.4 }]}
           onPress={send}
-          disabled={streaming}>
+          disabled={streaming || aiDisabled}>
           <Text style={{ color: '#fff', fontWeight: '700' }}>전송</Text>
         </Pressable>
       </View>
@@ -179,6 +201,16 @@ const styles = StyleSheet.create({
   aiText: { color: C.text, fontSize: 14, lineHeight: 21 },
   tool: { color: C.muted, fontSize: 12, marginVertical: 4, marginLeft: 4 },
   error: { color: C.critical, fontSize: 13, marginVertical: 6 },
+  disabledBanner: {
+    backgroundColor: C.surface,
+    borderRadius: 10,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: C.border,
+    padding: 12,
+    marginBottom: 8,
+  },
+  disabledTitle: { color: C.text, fontSize: 13, fontWeight: '700', marginBottom: 4 },
+  disabledText: { color: C.textSecondary, fontSize: 12, lineHeight: 18 },
   empty: { alignItems: 'center', paddingTop: 80 },
   emptyTitle: { color: C.text, fontSize: 17, fontWeight: '700' },
   emptyText: { color: C.muted, fontSize: 13, textAlign: 'center', marginTop: 12, lineHeight: 22 },

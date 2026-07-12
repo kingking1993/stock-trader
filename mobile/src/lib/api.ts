@@ -146,6 +146,7 @@ export type ScreenParams = {
 
 // ---------- REST ----------
 export const getHealth = (s: Settings) => apiFetch<{ status: string; paper_trading: boolean }>(s, '/health');
+export const getChatStatus = (s: Settings) => apiFetch<{ enabled: boolean }>(s, '/api/chat/status');
 
 export const getRecommend = (s: Settings, market: Market, top = 10, analyze = false) =>
   apiFetch<{ market: Market; candidates: Candidate[]; ai_summary: string | null }>(

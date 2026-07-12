@@ -1,0 +1,27 @@
+# Oracle VM 배포 — 백엔드 + Caddy(자동 HTTPS)
+# 사용: deploy/ 폴더에서 `docker compose up -d --build`
+services:
+  backend:
+    build: ../backend
+    restart: always
+    env_file:
+      - ../backend/.env
+    expose:
+      - "8000"
+
+  caddy:
+    image: caddy:2
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+
+volumes:
+  caddy_data:
+  caddy_config:
