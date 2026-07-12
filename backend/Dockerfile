@@ -19,5 +19,6 @@ COPY app ./app
 
 EXPOSE 8000
 
-# 프로덕션 실행 (단일 워커 — 인메모리 세션·pending 주문 상태 공유 위해)
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# 프로덕션 실행 (단일 워커 — 인메모리 세션·pending 주문 상태 공유).
+# Render 등은 $PORT를 주입하므로 그 값을 우선 사용, 없으면 8000.
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}"]
