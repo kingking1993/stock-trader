@@ -68,13 +68,12 @@ def sector_performance(market: str = "KR", member_sort: str = "change") -> list[
     market = market.upper()
     bars = screener._fetch_bars(market)
     universe = list(KR_UNIVERSE) if market == "KR" else screener.US_UNIVERSE
-    names = KR_UNIVERSE if market == "KR" else {}
     rank_of = {sym: i for i, sym in enumerate(universe, start=1)}
 
-    # 종목 행 계산 (스크리너와 동일 형식)
+    # 종목 행 계산 (스크리너와 동일 형식). 미국 대형주는 한글 별칭 적용
     rows: dict[str, dict] = {}
     for sym, df in bars.items():
-        row = screener._row(sym, names.get(sym), rank_of.get(sym, 999), df)
+        row = screener._row(sym, screener._display_name(market, sym), rank_of.get(sym, 999), df)
         if row is not None:
             rows[sym] = row
 

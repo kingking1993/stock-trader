@@ -203,16 +203,24 @@ def scan(market: str = "US", filters: ScreenFilters | None = None) -> list[dict]
     filters = filters or ScreenFilters()
     bars = _fetch_bars(market)
     universe = list(KR_UNIVERSE) if market == "KR" else US_UNIVERSE
-    names = KR_UNIVERSE if market == "KR" else {}
     rows = []
     for rank, symbol in enumerate(universe, start=1):
         df = bars.get(symbol)
         if df is None:
             continue
-        row = _row(symbol, names.get(symbol), rank, df)
+        row = _row(symbol, _display_name(market, symbol), rank, df)
         if row is not None:
             rows.append(row)
     return screen_rows(rows, filters)
+
+
+def _display_name(market: str, symbol: str) -> str | None:
+    """국내는 종목명, 미국 대형주는 한글 별칭(없으면 티커 표시되도록 None)."""
+    if market == "KR":
+        return KR_UNIVERSE.get(symbol)
+    from app.services.us_names_ko import us_name_ko
+
+    return us_name_ko(symbol)
 
 
 async def scan_async(market: str = "US", filters: ScreenFilters | None = None) -> list[dict]:
