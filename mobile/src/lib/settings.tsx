@@ -7,7 +7,8 @@ export type Settings = {
 };
 
 const DEFAULTS: Settings = {
-  baseUrl: 'http://192.168.0.31:8000',
+  // 클라우드(Render) 백엔드 — 노트북 없이 어디서든 접속. 로컬 개발 시 설정에서 변경.
+  baseUrl: 'https://stock-trader-fav6.onrender.com',
   apiKey: 'dev-key',
 };
 
