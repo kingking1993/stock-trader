@@ -1,16 +1,18 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { fmtValueCompact, type Candidate } from '../lib/api';
+import { fmtMoney, fmtValueCompact, type Candidate } from '../lib/api';
 import { C } from '../lib/theme';
 
 export type RowMode = 'default' | 'daytrade';
 
 /** 숫자 컬럼 고정폭 — RowHeader와 반드시 일치시킬 것 */
-export const COLS = { change: 56, rsi: 38, gap: 52, vol: 44, min: 46, value: 54, name: 112, rank: 28 } as const;
+export const COLS = { price: 74, change: 56, rsi: 38, gap: 52, vol: 44, min: 46, value: 54, name: 112, rank: 28 } as const;
 
 /** default 모드 테이블 전체 폭 (가로 스크롤 컨테이너용) */
 export const defaultTableWidth = (showRank?: boolean) =>
-  2 + (showRank ? COLS.rank : 0) + COLS.name + COLS.change + COLS.rsi + COLS.gap * 4 + COLS.value + COLS.vol + 20;
+  2 + (showRank ? COLS.rank : 0) + COLS.name + COLS.price + COLS.change + COLS.rsi + COLS.gap * 4 + COLS.value + COLS.vol + 20;
+
+const curOf = (symbol: string): 'USD' | 'KRW' => (/^\d{6}$/.test(symbol) ? 'KRW' : 'USD');
 
 function num(v: number | null | undefined, suffix = '', signed = false): string {
   if (v == null) return '-';
@@ -54,6 +56,9 @@ export function StockRow({
           {item.name ?? item.symbol}
         </Text>
       </View>
+      <Text style={[styles.num, { width: COLS.price, color: C.text }]} numberOfLines={1}>
+        {fmtMoney(item.price, currency)}
+      </Text>
       <Text style={[styles.num, { width: COLS.change, color: chg >= 0 ? C.up : C.down }]}>
         {num(chg, '%', true)}
       </Text>
@@ -99,6 +104,7 @@ export function RowHeader({ showRank, mode = 'default' }: { showRank?: boolean; 
       <View style={{ width: 2 }} />
       {showRank && <Text style={[styles.headText, { width: COLS.rank }]}>#</Text>}
       <Text style={[styles.headText, mode === 'default' ? { width: COLS.name } : { flex: 1 }]}>종목</Text>
+      <Text style={[styles.headText, { width: COLS.price, textAlign: 'right' }]}>현재가</Text>
       <Text style={[styles.headText, { width: COLS.change, textAlign: 'right' }]}>등락</Text>
       {mode === 'daytrade' ? (
         <>

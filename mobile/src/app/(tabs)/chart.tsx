@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { CandleChart } from '../../components/CandleChart';
 import { SignalBadge } from '../../components/SignalBadge';
-import { getChart } from '../../lib/api';
+import { fmtMoney, getChart } from '../../lib/api';
 import { useSettings } from '../../lib/settings';
 import { C } from '../../lib/theme';
 
@@ -94,6 +94,12 @@ export default function ChartScreen() {
             {query.data.name ? `${query.data.name} (${query.data.symbol})` : query.data.symbol} ·{' '}
             {timeframe === '1M' ? '분봉' : timeframe === '1D' ? '일봉' : timeframe === '1W' ? '주봉' : '월봉'}
           </Text>
+          {query.data.close.length > 0 && (
+            <Text style={styles.priceLine}>
+              {fmtMoney(query.data.close[query.data.close.length - 1], query.data.currency)}
+              <Text style={styles.priceNote}>  종가 (마지막 봉)</Text>
+            </Text>
+          )}
           <CandleChart data={query.data} width={width - 24} height={300} />
           {/* 매수/매도 버튼 */}
           <View style={styles.orderRow}>
@@ -158,7 +164,9 @@ const styles = StyleSheet.create({
   tfNote: { color: C.muted, fontSize: 11, marginLeft: 4 },
   center: { paddingVertical: 60, alignItems: 'center' },
   err: { color: C.critical, fontSize: 13, paddingVertical: 20, textAlign: 'center' },
-  symbolTitle: { color: C.text, fontSize: 16, fontWeight: '700', marginBottom: 8 },
+  symbolTitle: { color: C.text, fontSize: 16, fontWeight: '700', marginBottom: 2 },
+  priceLine: { color: C.text, fontSize: 22, fontWeight: '800', marginBottom: 8, fontVariant: ['tabular-nums'] },
+  priceNote: { color: C.muted, fontSize: 11, fontWeight: '400' },
   signalBox: {
     backgroundColor: C.surface,
     borderRadius: 12,
