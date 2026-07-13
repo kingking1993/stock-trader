@@ -51,11 +51,24 @@ export function LockGate({ children }: { children: React.ReactNode }) {
     setBusy(true);
     setError(null);
     try {
-      await verifyKey({ ...settings, apiKey: value });
-      await save({ ...settings, apiKey: value }); // 기기에 저장
-      setUnlocked(true);
-    } catch (e: any) {
-      setError('비밀번호가 올바르지 않습니다');
+      // 무료 서버가 잠들어 있으면 첫 요청이 느림 → 최대 3회 재시도
+      let lastErr: any = null;
+      for (let i = 0; i < 3; i++) {
+        try {
+          await verifyKey({ ...settings, apiKey: value });
+          await save({ ...settings, apiKey: value }); // 기기에 저장
+          setUnlocked(true);
+          return;
+        } catch (e: any) {
+          lastErr = e;
+          // 401 = 진짜 비번 오류 → 즉시 중단
+          if (e?.status === 401) break;
+          setError('서버를 깨우는 중입니다… 잠시만요');
+          await new Promise((r) => setTimeout(r, 3000));
+        }
+      }
+      if (lastErr?.status === 401) setError('비밀번호가 올바르지 않습니다');
+      else setError(`서버 연결 실패: ${String(lastErr?.message ?? lastErr)}`);
     } finally {
       setBusy(false);
     }
