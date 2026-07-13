@@ -18,7 +18,8 @@ export function LockGate({ children }: { children: React.ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const autoTried = React.useRef(false);
 
-  // 저장된 키로 자동 검증 — 앱 시작 시 딱 한 번만 (재실행되면 진입이 막히는 버그 방지)
+  // 저장된 키로 자동 검증 — 앱 시작 시 딱 한 번만.
+  // ⚠ 반드시 타임아웃을 둔다. 서버가 잠들어 응답이 없으면 로딩 화면에 갇히기 때문.
   useEffect(() => {
     if (!loaded || autoTried.current) return;
     autoTried.current = true;
@@ -27,10 +28,14 @@ export function LockGate({ children }: { children: React.ReactNode }) {
       setChecking(false);
       return;
     }
-    verifyKey(settings)
+    // 8초 안에 답이 없으면 그냥 비밀번호 화면을 띄운다 (갇히지 않게)
+    const timeout = new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('timeout')), 8000),
+    );
+    Promise.race([verifyKey(settings), timeout])
       .then(() => setUnlocked(true))
       .catch(() => {
-        /* 저장된 키가 틀림(비번 변경 등) → 입력 화면 */
+        /* 키가 틀렸거나 서버가 느림 → 입력 화면 */
       })
       .finally(() => setChecking(false));
   }, [loaded]);
