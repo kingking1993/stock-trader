@@ -13,16 +13,16 @@ export function LockGate({ children }: { children: React.ReactNode }) {
   const { settings, loaded, unlocked, save, setUnlocked } = useSettings();
   const [checking, setChecking] = useState(true);
   const [pw, setPw] = useState('');
+  const [showPw, setShowPw] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const autoTried = React.useRef(false);
 
-  // 저장된 키로 자동 검증 (기기에 한 번만 입력)
+  // 저장된 키로 자동 검증 — 앱 시작 시 딱 한 번만 (재실행되면 진입이 막히는 버그 방지)
   useEffect(() => {
-    if (!loaded) return;
-    if (unlocked) {
-      setChecking(false);
-      return;
-    }
+    if (!loaded || autoTried.current) return;
+    autoTried.current = true;
+
     if (!settings.apiKey) {
       setChecking(false);
       return;
@@ -30,10 +30,10 @@ export function LockGate({ children }: { children: React.ReactNode }) {
     verifyKey(settings)
       .then(() => setUnlocked(true))
       .catch(() => {
-        /* 키가 틀림(비번 변경 등) → 입력 화면 */
+        /* 저장된 키가 틀림(비번 변경 등) → 입력 화면 */
       })
       .finally(() => setChecking(false));
-  }, [loaded, settings.apiKey]);
+  }, [loaded]);
 
   if (!loaded || checking) {
     return (
@@ -84,12 +84,18 @@ export function LockGate({ children }: { children: React.ReactNode }) {
         onChangeText={setPw}
         placeholder="비밀번호"
         placeholderTextColor={C.muted}
-        secureTextEntry
+        secureTextEntry={!showPw}
         autoCapitalize="none"
         autoCorrect={false}
+        autoComplete="off"
+        textContentType="none"
+        spellCheck={false}
         onSubmitEditing={submit}
         returnKeyType="go"
       />
+      <Pressable onPress={() => setShowPw((v) => !v)} style={{ marginTop: 8 }}>
+        <Text style={{ color: C.accent, fontSize: 13 }}>{showPw ? '🙈 비밀번호 가리기' : '👁 비밀번호 보기'}</Text>
+      </Pressable>
       {error && <Text style={styles.error}>{error}</Text>}
       <Pressable style={[styles.btn, busy && { opacity: 0.5 }]} onPress={submit} disabled={busy}>
         {busy ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>잠금 해제</Text>}
